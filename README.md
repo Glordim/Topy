@@ -1,4 +1,4 @@
-Topy
+topy
 ====
 
-Topy is a like pocessus manager for GNU/Linux. It is launch on a term.
+topy is an interactive process viewer for GNU/Linux. (in terminal)
