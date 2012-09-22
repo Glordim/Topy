@@ -1,32 +1,26 @@
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/stat.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 #include <termcap.h>
 #include <termios.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 
 #include "string.h"
 #include "types.h"
 
-int		run;
-struct termios	old_term;
+int		gl_run;
+struct termios	gl_old_term;
+
+int	inspect_proccess(t_arg* arg);
 
 void	signal_interrup(int a)
 {
 	(void)a;
 
-	run = 0;
+	gl_run = 0;
 	write(1, "\n", 1);
 }
-
-int	inspect_proccess(t_arg* arg);
 
 void	print_help()
 {
@@ -60,7 +54,7 @@ int	get_arg(int argc, char** argv, t_arg* arg)
 		if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--delay") == 0)
 		{
 			if (argv[i + 1] == 0)
-				id_print_str(":: The option 'Delay' is not complete, delay will be set at '1000'\n");
+				id_print_str(":: The option 'Delay' is not complete, delay will be set at '200'\n");
 			else
 			{
 				i = i + 1;
@@ -90,11 +84,11 @@ int	init_tty()
 		return fatal(2, "TERM is not defined in env", 1);
 
 	ret = tgetent(0, term);
-	if (ret == 0)
+	if (ret != 1)
 		return fatal(2, "tgtent fail", 1);
 
-	tcgetattr(0, &old_term);
-	new_term = old_term;
+	tcgetattr(0, &gl_old_term);
+	new_term = gl_old_term;
 	new_term.c_lflag &= ~(ECHO | ICANON);
 
 	tcsetattr(0, TCSANOW, &new_term);
@@ -110,7 +104,7 @@ void	restore_tty()
 {
 	tputs(tgetstr("cl", 0), 1, id_print_char);
 	tputs(tgetstr("ve", 0), 1, id_print_char);
-	tcsetattr(0, TCSANOW, &old_term);
+	tcsetattr(0, TCSANOW, &gl_old_term);
 }
 
 int	main(int argc, char** argv)
@@ -121,8 +115,9 @@ int	main(int argc, char** argv)
 	if (isatty(STDIN_FILENO) == 0)
 		return fatal(2, strerror(errno), 1);
 
+	ret = 0;
 	if (get_arg(argc, argv, &arg))
-		ret = 1;
+		return 1;
 
 	if (arg.name_process != 0)
 	{

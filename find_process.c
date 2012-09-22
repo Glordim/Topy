@@ -10,7 +10,7 @@
 #include "get_info.h"
 #include "string.h"
 
-extern int	run;
+extern int	gl_run;
 
 typedef struct	s_list_proc
 {
@@ -258,7 +258,7 @@ int	get_proc_path(char** path, t_arg* arg)
 	choice = 0;
 	old_size = 0;
 	tputs(tgetstr("cl", 0), 1, id_print_char);
-	while (*path == 0 && run == 1)
+	while (*path == 0 && gl_run == 1)
 	{
 		size_list = 0;
 
@@ -315,12 +315,12 @@ int	inspect_proccess(t_arg* arg)
 	int		fd;
 	int		ret;
 
-	run = 1;
+	gl_run = 1;
 	if (get_proc_path(&path, arg))
 		return 1;
 
 	ret = 0;
-	while (run)
+	while (gl_run)
 	{
 		if (path != 0)
 		{
@@ -333,7 +333,7 @@ int	inspect_proccess(t_arg* arg)
 					if (ret == -1)
 					{
 						ret = 1;
-						run = 0;
+						gl_run = 0;
 					}
 				}
 				else
