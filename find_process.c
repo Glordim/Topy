@@ -9,6 +9,7 @@
 
 #include "get_info.h"
 #include "string.h"
+#include "types.h"
 
 extern int	gl_run;
 
@@ -17,12 +18,6 @@ typedef struct	s_list_proc
 	char*			pid;
 	struct s_list_proc*	next;
 }t_list_proc;
-
-typedef struct	s_arg
-{
-	unsigned int 	delay;
-	const char*	name_process;
-}t_arg;
 
 typedef struct	s_process
 {
@@ -304,7 +299,7 @@ int	get_proc_path(char** path, t_arg* arg)
 
 		old_size = size_list;
 
-		usleep(arg->delay);
+		usleep(arg->delay * 1000);
 	}
 	return 0;
 }
@@ -322,35 +317,34 @@ int	inspect_proccess(t_arg* arg)
 	ret = 0;
 	while (gl_run)
 	{
-		if (path != 0)
+		fd = open(path, O_RDONLY);
+		if (fd < 0)
 		{
-			fd = open(path, O_RDONLY);
-			if (fd < 0)
+			if (errno == ENOENT)
 			{
-				if (errno == ENOENT)
+				ret = get_proc_path(&path, arg);
+				if (ret == -1)
 				{
-					ret = get_proc_path(&path, arg);
-					if (ret == -1)
-					{
-						ret = 1;
-						gl_run = 0;
-					}
+					ret = 1;
+					gl_run = 0;
 				}
-				else
-					ret = fatal(2, strerror(errno), 1);
 			}
 			else
 			{
-				id_print_str("OK\n");
-			//	read();
-				if (close(fd) == -1)
-					ret = fatal(2, strerror(errno), 1);
+				ret = fatal(2, strerror(errno), 1);
+				gl_run = 0;
 			}
 		}
-		usleep(arg->delay);
+		else
+		{
+			id_print_str("OK\n");
+		//	read();
+			if (close(fd) == -1)
+				ret = fatal(2, strerror(errno), 1);
+		}
+		usleep(arg->delay * 1000);
 	}
 	free(path);
 	return ret;
 }
-
 
