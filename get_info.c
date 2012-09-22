@@ -11,7 +11,7 @@ char	get_state(const char* pid)
 	int		nread;
 	unsigned int	nb_space;
 
-	path = malloc(strlen("/proc//stat") + strlen(pid) + 1);
+	path = malloc((unsigned int)strlen("/proc//stat") + (unsigned int)strlen(pid) + 1);
 
 	strcpy(path, "/proc/");
 	strcat(path, pid);
@@ -81,3 +81,4 @@ unsigned int	get_mem(const char* pid)
 	close(fd);
 	return mem_usage;
 }
+

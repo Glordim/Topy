@@ -97,7 +97,10 @@ int	add_proc_to_list(t_list_proc** list, char* pid)
 		*list = malloc(sizeof(t_list_proc));
 		if (*list == 0)
 			return fatal(1, "Malloc fail", 1);
-		(*list)->pid = pid;
+		(*list)->pid = malloc(strlen(pid) + 1);
+		if ((*list)->pid == 0)
+			return fatal(1, "Malloc fail", 1);
+		strcpy((*list)->pid, pid);
 		(*list)->next = 0;
 	}
 	else
@@ -105,7 +108,10 @@ int	add_proc_to_list(t_list_proc** list, char* pid)
 		new_proc = malloc(sizeof(t_list_proc));
 		if (new_proc == 0)
 			return fatal(1, "Malloc fail", 1);
-		new_proc->pid = pid;
+		new_proc->pid = malloc(strlen(pid) + 1);
+		if (new_proc->pid == 0)
+			return fatal(1, "Malloc fail", 1);
+		strcpy(new_proc->pid, pid);
 		new_proc->next = 0;
 
 		ptr_list = *list;
@@ -125,6 +131,7 @@ void	delete_list(t_list_proc* list)
 	{
 		list = ptr_list;
 		ptr_list = ptr_list->next;
+		free(list->pid);
 		free(list);
 	}
 }
@@ -248,6 +255,9 @@ int	get_proc_path(char** path, t_arg* arg)
 	t_list_proc*	list;
 	t_list_proc*	ptr_list;
 
+	if (*path != 0)
+		free(*path);
+
 	*path = 0;
 	list = 0;
 	choice = 0;
@@ -270,13 +280,16 @@ int	get_proc_path(char** path, t_arg* arg)
 		}
 		if (size_list == 1)
 		{
-			*path = malloc(sizeof(char) * (strlen("/proc//") + strlen(list->pid) + 1));
+			*path = malloc(strlen("/proc//") + strlen(list->pid) + 1);
 			if (*path == 0)
+			{
+				delete_list(list);
 				return fatal(2, "Malloc fail", 1);
+			}
 			strcpy(*path, "/proc/");
 			strcat(*path, list->pid);
 			strcat(*path, "/");
-			return 0;
+			break;
 		}
 		if (size_list < old_size)
 			tputs(tgetstr("cl", 0), 1, id_print_char);
@@ -294,13 +307,18 @@ int	get_proc_path(char** path, t_arg* arg)
 		{
 			printf(":: %d process found\n\n", size_list);
 			print_list_proc(choice, list);
-			apply_input(&choice, size_list, list, path);
+			if (apply_input(&choice, size_list, list, path))
+			{
+				delete_list(list);
+				return 1;
+			}
 		}
 
 		old_size = size_list;
 
 		usleep(arg->delay * 1000);
 	}
+	delete_list(list);
 	return 0;
 }
 
@@ -309,6 +327,8 @@ int	inspect_proccess(t_arg* arg)
 	char*		path;
 	int		fd;
 	int		ret;
+
+	path = 0;
 
 	gl_run = 1;
 	if (get_proc_path(&path, arg))
